@@ -298,10 +298,15 @@ func (a *Applier) MtsWorker(workerIndex int) {
 		case <-a.shutdownCh:
 			keepLoop = false
 		case <-timer.C:
+			a.logger.Debugf("mysql.applier: worker: %v. will ping", workerIndex)
 			err := a.dbs[workerIndex].Db.PingContext(context.Background())
 			if err != nil {
+				keepLoop = false
+				a.onError(TaskStateDead, err)
 				a.logger.Errorf("mysql.applier. bad connection for mts worker. workerIndex: %v, err: %v",
 					workerIndex, err)
+			} else {
+				a.logger.Debugf("mysql.applier: worker: %v. ping ok", workerIndex)
 			}
 		}
 		timer.Stop()
